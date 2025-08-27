@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>육아시간 계산기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f5f5dc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 17px;
+            color: #86868b;
+            line-height: 1.4;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 15px;
+            font-weight: 500;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            border: 1.5px solid #e5e5e7;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #1d1d1f;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #5a9fd4;
+            box-shadow: 0 0 0 3px rgba(90, 159, 212, 0.1);
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 18px;
+            background: #5a9fd4;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+
+        .calculate-btn:hover {
+            background: #4a8bc2;
+            transform: translateY(-1px);
+        }
+
+        .calculate-btn:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 32px;
+            padding: 24px;
+            background: #4682b4;
+            border-radius: 16px;
+            color: white;
+            display: none;
+        }
+
+        .result.error {
+            background: #cd5c5c;
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .result-detail {
+            font-size: 15px;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .usage-period {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 16px;
+            border-radius: 12px;
+            margin-top: 16px;
+            grid-column: 1 / -1;
+        }
+
+        .usage-period-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .usage-period-text {
+            font-size: 14px;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 32px 24px;
+            }
+            
+            .title {
+                font-size: 28px;
+            }
+            
+            .result-stats {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">육아시간 계산기</h1>
+            <p class="subtitle">만 8세 이하 또는 초등학교 2학년 이하 자녀의 육아시간 사용 현황을 확인해보세요</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">자녀 생년월일</label>
+            <input type="date" id="birthDate" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">사용한 개월 수 (선택사항)</label>
+            <input type="number" id="usedMonths" class="form-input" min="0" max="36" placeholder="예: 12개월">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">비연속 사용 일수 (선택사항)</label>
+            <input type="number" id="nonContinuousDays" class="form-input" min="0" placeholder="예: 30일">
+        </div>
+
+        <button type="button" onclick="calculate()" class="calculate-btn">계산하기</button>
+
+        <div id="result" class="result">
+            <div class="result-title" id="resultTitle"></div>
+            <div class="result-detail" id="resultDetail"></div>
+            <div class="result-stats" id="resultStats"></div>
+        </div>
+    </div>
+
+    <script>
+        function calculate() {
+            const birthDate = document.getElementById('birthDate').value;
+            const usedMonths = parseInt(document.getElementById('usedMonths').value) || 0;
+            
+            // additionalDays 대신 nonContinuousDays로 변경 (HTML ID와 맞춤)
+            const additionalDaysElement = document.getElementById('additionalDays');
+            const additionalDays = additionalDaysElement ? parseInt(additionalDaysElement.value) || 0 : 0;
+            
+            // 생년월일이 입력되지 않은 경우
+            if (!birthDate) {
+                alert('자녀 생년월일을 입력해주세요.');
+                return;
+            }
+            
+            const birth = new Date(birthDate);
+            const today = new Date();
+            
+            // 1. 만 9세가 되는 날의 전날 계산
+            const age9Date = new Date(birth.getFullYear() + 9, birth.getMonth(), birth.getDate() - 1);
+            
+            // 2. 초등학교 3학년이 되는 날의 전날 계산 (만 8세 기준)
+            const grade3Year = birth.getFullYear() + 8;
+            const grade3Date = new Date(grade3Year, 1, 28); // 2월 28일
+            
+            // 윤년 처리
+            if ((grade3Year % 4 === 0 && grade3Year % 100 !== 0) || (grade3Year % 400 === 0)) {
+                grade3Date.setDate(29);
+            }
+            
+            // 더 늦은 날짜를 사용 가능 마지막 날로 설정
+            const usageEndDate = age9Date > grade3Date ? age9Date : grade3Date;
+            
+            // 결과 영역 표시
+            const resultDiv = document.getElementById('result');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultDetail = document.getElementById('resultDetail');
+            const resultStats = document.getElementById('resultStats');
+            
+            // 반드시 결과 영역을 보이게 설정
+            if (resultDiv) {
+                resultDiv.style.display = 'block';
+            }
+            
+            if (today > usageEndDate) {
+                // 사용 기간이 만료된 경우
+                if (resultDiv) resultDiv.className = 'result error';
+                if (resultTitle) resultTitle.textContent = '사용 불가';
+                if (resultDetail) resultDetail.textContent = '자녀가 만 8세를 초과했거나 초등학교 2학년을 초과했습니다.';
+                if (resultStats) resultStats.innerHTML = '';
+            } else {
+                // 사용 가능한 경우 계산
+                let totalUsedMonths = usedMonths;
+                
+                // 추가 일수를 개월로 환산 (22일 = 1개월, 근무일 기준)
+                if (additionalDays > 0) {
+                    totalUsedMonths += Math.floor(additionalDays / 22);
+                }
+                
+                const maxMonths = 36;
+                const remainingMonths = Math.max(0, maxMonths - totalUsedMonths);
+                
+                // 사용 가능 마지막 날 포맷팅
+                const endDateString = usageEndDate.toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                // 어떤 조건으로 결정되었는지 표시
+                const endReason = age9Date > grade3Date ? 
+                    '(만 9세 생일 전날)' : 
+                    '(초등학교 3학년 되는 해 2월 말일)';
+                
+                if (resultDiv) resultDiv.className = 'result';
+                if (resultTitle) resultTitle.textContent = '계산 완료';
+                if (resultDetail) {
+                    resultDetail.innerHTML = `
+                        전체 36개월 중 ${totalUsedMonths}개월을 사용하셨습니다.<br>
+                        <small style="opacity: 0.8;">* 육아시간은 하루 최대 2시간씩 사용하는 제도입니다</small>
+                    `;
+                }
+                
+                if (resultStats) {
+                    resultStats.innerHTML = `
+                        <div class="stat-item">
+                            <span class="stat-number">${remainingMonths}</span>
+                            <span class="stat-label">남은 개월</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${totalUsedMonths}</span>
+                            <span class="stat-label">사용한 개월</span>
+                        </div>
+                        <div class="usage-period">
+                            <div class="usage-period-title">육아시간 사용 가능 기간</div>
+                            <div class="usage-period-text">
+                                ${endDateString}까지 사용 가능합니다.<br>
+                                <span style="font-size: 12px; opacity: 0.7;">${endReason}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            // 결과로 스크롤
+            if (resultDiv) {
+                setTimeout(() => {
+                    resultDiv.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
+        }
+        
+        function isLeapYear(year) {
+            return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        }
+    </script>
+</body>
+</html>
