@@ -193,7 +193,7 @@
     <div class="container">
         <div class="header">
             <h1 class="title">육아시간 계산기</h1>
-            <p class="subtitle">만 9세 이하 또는 초등학교 3학년 이하 자녀의 육아시간 사용 현황을 확인해보세요</p>
+            <p class="subtitle">만 8세 이하 또는 초등학교 2학년 이하 자녀의 육아시간 사용 현황을 확인해보세요</p>
         </div>
 
         <div class="form-group">
@@ -224,7 +224,10 @@
         function calculate() {
             const birthDate = document.getElementById('birthDate').value;
             const usedMonths = parseInt(document.getElementById('usedMonths').value) || 0;
-            const nonContinuousDays = parseInt(document.getElementById('nonContinuousDays').value) || 0;
+            
+            // additionalDays 대신 nonContinuousDays로 변경 (HTML ID와 맞춤)
+            const additionalDaysElement = document.getElementById('additionalDays');
+            const additionalDays = additionalDaysElement ? parseInt(additionalDaysElement.value) || 0 : 0;
             
             // 생년월일이 입력되지 않은 경우
             if (!birthDate) {
@@ -238,13 +241,12 @@
             // 1. 만 9세가 되는 날의 전날 계산
             const age9Date = new Date(birth.getFullYear() + 9, birth.getMonth(), birth.getDate() - 1);
             
-            // 2. 초등학교 3학년이 되는 날(해당 학년 3월 1일)의 전날 계산
-            // 자녀가 태어난 연도 + 8년 + 3월 1일 - 1일 = 2월 28일(또는 29일)
-            const grade3Year = birth.getFullYear() + 8; // 보통 만 8세에 초등학교 3학년
-            const grade3Date = new Date(grade3Year, 1, 28); // 2월 28일 (윤년은 자동 처리됨)
+            // 2. 초등학교 3학년이 되는 날의 전날 계산 (만 8세 기준)
+            const grade3Year = birth.getFullYear() + 8;
+            const grade3Date = new Date(grade3Year, 1, 28); // 2월 28일
             
             // 윤년 처리
-            if (isLeapYear(grade3Year)) {
+            if ((grade3Year % 4 === 0 && grade3Year % 100 !== 0) || (grade3Year % 400 === 0)) {
                 grade3Date.setDate(29);
             }
             
@@ -257,21 +259,24 @@
             const resultDetail = document.getElementById('resultDetail');
             const resultStats = document.getElementById('resultStats');
             
-            resultDiv.style.display = 'block';
+            // 반드시 결과 영역을 보이게 설정
+            if (resultDiv) {
+                resultDiv.style.display = 'block';
+            }
             
             if (today > usageEndDate) {
                 // 사용 기간이 만료된 경우
-                resultDiv.className = 'result error';
-                resultTitle.textContent = '사용 불가';
-                resultDetail.textContent = '자녀가 만 9세를 초과했거나 초등학교 3학년을 초과했습니다.';
-                resultStats.innerHTML = '';
+                if (resultDiv) resultDiv.className = 'result error';
+                if (resultTitle) resultTitle.textContent = '사용 불가';
+                if (resultDetail) resultDetail.textContent = '자녀가 만 8세를 초과했거나 초등학교 2학년을 초과했습니다.';
+                if (resultStats) resultStats.innerHTML = '';
             } else {
                 // 사용 가능한 경우 계산
                 let totalUsedMonths = usedMonths;
                 
-                // 비연속 일수를 개월로 환산 (20일 = 1개월)
-                if (nonContinuousDays > 0) {
-                    totalUsedMonths += Math.floor(nonContinuousDays / 20);
+                // 추가 일수를 개월로 환산 (22일 = 1개월, 근무일 기준)
+                if (additionalDays > 0) {
+                    totalUsedMonths += Math.floor(additionalDays / 22);
                 }
                 
                 const maxMonths = 36;
@@ -289,31 +294,44 @@
                     '(만 9세 생일 전날)' : 
                     '(초등학교 3학년 되는 해 2월 말일)';
                 
-                resultDiv.className = 'result';
-                resultTitle.textContent = '계산 완료';
-                resultDetail.textContent = `전체 36개월 중 ${totalUsedMonths}개월을 사용하셨습니다.`;
+                if (resultDiv) resultDiv.className = 'result';
+                if (resultTitle) resultTitle.textContent = '계산 완료';
+                if (resultDetail) {
+                    resultDetail.innerHTML = `
+                        전체 36개월 중 ${totalUsedMonths}개월을 사용하셨습니다.<br>
+                        <small style="opacity: 0.8;">* 육아시간은 하루 최대 2시간씩 사용하는 제도입니다</small>
+                    `;
+                }
                 
-                resultStats.innerHTML = `
-                    <div class="stat-item">
-                        <span class="stat-number">${remainingMonths}</span>
-                        <span class="stat-label">남은 개월</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">${totalUsedMonths}</span>
-                        <span class="stat-label">사용한 개월</span>
-                    </div>
-                    <div class="usage-period">
-                        <div class="usage-period-title">육아시간 사용 가능 기간</div>
-                        <div class="usage-period-text">${endDateString}까지 사용 가능합니다.<br><span style="font-size: 12px; opacity: 0.7;">${endReason}</span></div>
-                    </div>
-                `;
+                if (resultStats) {
+                    resultStats.innerHTML = `
+                        <div class="stat-item">
+                            <span class="stat-number">${remainingMonths}</span>
+                            <span class="stat-label">남은 개월</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${totalUsedMonths}</span>
+                            <span class="stat-label">사용한 개월</span>
+                        </div>
+                        <div class="usage-period">
+                            <div class="usage-period-title">육아시간 사용 가능 기간</div>
+                            <div class="usage-period-text">
+                                ${endDateString}까지 사용 가능합니다.<br>
+                                <span style="font-size: 12px; opacity: 0.7;">${endReason}</span>
+                            </div>
+                        </div>
+                    `;
+                }
             }
             
             // 결과로 스크롤
-            resultDiv.scrollIntoView({ behavior: 'smooth' });
+            if (resultDiv) {
+                setTimeout(() => {
+                    resultDiv.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
         }
         
-        // 윤년 판별 함수
         function isLeapYear(year) {
             return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
         }
